@@ -7,8 +7,8 @@ async function tokenContract() {
     await deploy.deployed();
 
     console.log(`Bored Ape token address: ${deploy.address}`);
-    console.log(await deploy.transferToken(stakingContractAddress))
-    console.log(await deploy.balanceOf(stakingContractAddress));
+    //console.log(await deploy.transferToken(stakingContractAddress))
+    //console.log(await deploy.balanceOf(stakingContractAddress));
 }
 
 tokenContract().catch((error) => {

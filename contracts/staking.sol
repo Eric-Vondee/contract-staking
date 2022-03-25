@@ -7,13 +7,11 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract Staking {
     address BOREDAPES_NFT= 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
-    //address boredApeOwnerAddress = 0x26bc0121ffef93e8c28d56a2eddabd590f7772b8;
-    
-    IERC721 boredApe = IERC721(BOREDAPES_NFT);
-    IERC20 name;
     
     uint8 constant MONTHLY_PERCENTAGE = 10;
     uint8 constant DAYS = 30;
+    address boredApeNft;
+    address batToken;
     uint88 constant MULTIPLIER_EFFECT = 10000;
 
     struct Stakers {
@@ -25,10 +23,16 @@ contract Staking {
     }
 
     mapping(address => Stakers) public stakers; 
+
+    constructor(address _boredApeNft, address _batToken) {
+        boredApeNft = _boredApeNft;
+        batToken = _batToken;
+    }
   
     function stake(address _address, uint256 _amount) public{
         require(!stakers[_address].stakedStatus, "You have staked");
-        require(boredApe.balanceOf(_address) >=1, "Insufficient BAYC to stake");
+        require(IERC721(boredApeNft).balanceOf(_address) >=1, "Insufficient BAYC to stake");
+        require(IERC20(boredApeNft).transferFrom(_address, address(this), _amount), "Insufficient funds");
         Stakers storage i_ = stakers[_address];
         i_.staker = _address;
         i_.stakedStatus = true;
@@ -40,13 +44,13 @@ contract Staking {
     function withdrawStake(address _address, uint256 _amount) public {
         Stakers storage i_ = stakers[_address];
         require(i_.amountStaked >= _amount, "Insufficient funds");
-        uint256 currentBalance = i_.amountStaked - _amount;
         
+        uint256 currentBalance = i_.amountStaked - _amount;
 
         if(block.timestamp < i_.minimumStakingDays){
             i_.amountStaked = currentBalance;
             i_.stakedAt = block.timestamp;
-            //name.transferFrom(address(this), _address, _amount);
+            IERC20(batToken).transfer(_address, currentBalance);
         }
         else{
             uint256 maturityDate = block.timestamp - i_.stakedAt;
@@ -58,8 +62,8 @@ contract Staking {
             i_.amountStaked = value;
             i_.minimumStakingDays = block.timestamp + 3 days;
             i_.stakedAt = block.timestamp;
+            IERC20(batToken).transfer(_address, value);
         
-            //name.transferFrom(address(this), _address, calculatedInterest);
         }
     }
 
