@@ -1,73 +1,96 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol"
 
-// contract Token is ERC20 {
-
-    
-//     constructor() ERC20("boredApeToken", "boredAT"){
-//         _mint(msg.sender, 1e8);
-//     }
-// }
 import "./IERC20.sol";
-
- 
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract Staking {
-
+    address BOREDAPES_NFT= 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
+    //address boredApeOwnerAddress = 0x26bc0121ffef93e8c28d56a2eddabd590f7772b8;
+    
+    IERC721 boredApe = IERC721(BOREDAPES_NFT);
     IERC20 name;
-    uint8 constant MONTHLY_INTEREST = 10;
+
+    uint256 xx;
+    uint8 constant MONTHLY_PERCENTAGE = 10;
+    uint8 constant DAYS = 30;
+    uint88 constant MULTIPLIER_EFFECT = 10000;
+
     struct Stakers {
         address  staker;
-        bool staked;
-        uint88 minimumStakingDays;
-        uint256 amountstaked;
+        bool stakedStatus;
+        uint256 minimumStakingDays;
+        uint256 amountStaked;
         uint256 stakedAt;
     }
 
-    mapping(address => Stakers) public stakers;
-    
-    constructor(address _tokenAddr) {
-        name = IERC20(_tokenAddr);
-    }
+    mapping(address => Stakers) public stakers; 
   
     function stake(address _address, uint256 _amount) public{
-        require(stakers[_address].staked == true, "You don stake already");
+        require(!stakers[_address].stakedStatus, "You have staked");
+        require(boredApe.balanceOf(_address) >=1, "Insufficient BAYC to stake");
         Stakers storage i_ = stakers[_address];
         i_.staker = _address;
-        i_.staked = true;
+        i_.stakedStatus = true;
         i_.minimumStakingDays = block.timestamp + 3 days;
-        i_.amountstaked = _amount;
-        i.stakedAt = block.timestamp;
+        i_.amountStaked = _amount;
+        i_.stakedAt = block.timestamp;
     }
 
-    function withdraw(address _address) public {
+    function withdrawStake(address _address, uint256 _amount) public {
         Stakers storage i_ = stakers[_address];
-        uint256 _maturityDate = block.timestamp - i_.minimumStakingDays;
+        require(i_.amountStaked >= _amount, "Insufficient funds");
+        uint256 currentBalance = i_.amountStaked - _amount;
+        
 
-        if(i_.minimumStakingDays < block.timestamp){
-            name.transfer(_address, i_.amountstaked);
+        if(block.timestamp < i_.minimumStakingDays){
+            i_.amountStaked = currentBalance;
+            i_.stakedAt = block.timestamp;
+            //name.transferFrom(address(this), _address, _amount);
         }
         else{
-            uint256 interest = calculateInterest(i_.amountstaked);
-            name.transfer(_address, amount);
-        }
-    }
-    /*
-    * this calculates the interest 
-     */
-    function calculateInterest(uint256 _amountStaked, uint256 _maturityDate) public view returns(uint256){
+            uint256 maturityDate = block.timestamp - i_.stakedAt;
+            uint256 accumulatedDays = maturityDate/(60*60*24);
+            uint256 interest = MONTHLY_PERCENTAGE*MULTIPLIER_EFFECT * accumulatedDays * 100;
+            uint256 division = MULTIPLIER_EFFECT*100*30;
+            uint256 calculatedInterest = interest/division;
+            xx = (i_.amountStaked + calculatedInterest)- _amount;
+            i_.amountStaked = xx;
+            i_.minimumStakingDays = block.timestamp + 3 days;
+            i_.stakedAt = block.timestamp;
         
-        if(_maturityDate < 3 days) {
-            return _amountStaked;
+            //name.transferFrom(address(this), _address, calculatedInterest);
         }
-
-        uint256 cycles = _maturityDate / 30 days;
-
-
-        uint256 interest = (_amount * 10)/100;
-        uint256 accumulatedInterest = _amount + interest;
-        return accumulatedInterest;
     }
+
+     function reStake(address _address, uint256 _amount) public {
+          Stakers storage i_ = stakers[_address];
+          uint256 currentBalance = i_.amountStaked;
+
+          if(block.timestamp < i_.minimumStakingDays){
+              i_.amountStaked = currentBalance + _amount;
+              i_.stakedAt = block.timestamp;
+              i_.minimumStakingDays = block.timestamp + 3 days;
+          }
+          else{
+              uint256 maturityDate = block.timestamp - i_.stakedAt;
+              uint256 accumulatedDays = maturityDate/(60*60*24);
+               uint256 interest = MONTHLY_PERCENTAGE*MULTIPLIER_EFFECT * accumulatedDays * 100;
+               uint256 division = MULTIPLIER_EFFECT*100*30;
+               uint256 calculatedInterest = interest/division;
+              uint256 newStakingAmount = currentBalance + _amount + calculatedInterest;
+            i_.amountStaked = newStakingAmount; 
+            i_.stakedAt = block.timestamp + 3 days;
+          }
+     }
+
+     function getStakeBalance(address _address) public view returns(Stakers memory) {
+         Stakers storage i_ = stakers[_address];
+         return i_;
+     }
+
+    //  function gett() public view returns(uint256){
+    //      return xx;
+    //  }
 }
