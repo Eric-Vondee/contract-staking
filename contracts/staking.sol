@@ -11,8 +11,7 @@ contract Staking {
     
     IERC721 boredApe = IERC721(BOREDAPES_NFT);
     IERC20 name;
-
-    uint256 xx;
+    
     uint8 constant MONTHLY_PERCENTAGE = 10;
     uint8 constant DAYS = 30;
     uint88 constant MULTIPLIER_EFFECT = 10000;
@@ -55,8 +54,8 @@ contract Staking {
             uint256 interest = MONTHLY_PERCENTAGE*MULTIPLIER_EFFECT * accumulatedDays * 100;
             uint256 division = MULTIPLIER_EFFECT*100*30;
             uint256 calculatedInterest = interest/division;
-            xx = (i_.amountStaked + calculatedInterest)- _amount;
-            i_.amountStaked = xx;
+            uint256 value = (i_.amountStaked + calculatedInterest)- _amount;
+            i_.amountStaked = value;
             i_.minimumStakingDays = block.timestamp + 3 days;
             i_.stakedAt = block.timestamp;
         
