@@ -48,14 +48,10 @@ async function stakingContract() {
 
   const boredApeSigner = await ethers.getSigner(boredApeOwnerAddress);
 
-
-  const boredApeContract = await ethers.getContractAt("IERC721", BOREDAPES_NFT, boredApeSigner);
   const staking = await ethers.getContractAt("Staking", stakingContractAddress);
   const batToken = await ethers.getContractAt("BoredApeToken", '0x4bf010f1b9beDA5450a8dD702ED602A104ff65EE');
 
-  const stakingSigner = await ethers.getSigner(stakingContractAddress);
-
-
+  
   console.log(`staking balance before approval: ${await batToken.balanceOf(stakingContractAddress)}`);
 
   /*******************************Bored Ape Owner ACCOUNT IMPERSONATION*******************************************/
@@ -66,16 +62,22 @@ async function stakingContract() {
       params: [boredApeOwnerAddress]
   })
 
-
-  console.log(await staking.approveStaker(boredApeOwnerAddress))
+  await batToken.connect(boredApeSigner).approve(staking.address, 1000)
+  //await batToken.connect(boredApeSigner).transferFrom(staking.address, boredApeOwnerAddress, 100)
+  
   console.log(await batToken.balanceOf(boredApeOwnerAddress))
   console.log(`staking balance after approval: ${await batToken.balanceOf(stakingContractAddress)}`);
 
+  console.log(`Approved allowance: ${await batToken.allowance(stakingContractAddress, boredApeOwnerAddress)}`)
+
   console.log(`stakin xx number of tokens: ${await staking.connect(boredApeSigner).stake(boredApeOwnerAddress, 100)}`)
+  
   //get staker profile
   console.log(`Get staker profile: ${await staking.getStakeBalance(boredApeOwnerAddress)}`);
 
-  console.log(`staking balance after approval: ${await batToken.balanceOf(stakingContractAddress)}`);
+  //console.log(`staking balance after approval: ${await batToken.balanceOf(stakingContractAddress)}`);
+
+
 
   /**
    * Jump through time by increasing evm time
@@ -91,6 +93,8 @@ async function stakingContract() {
 
   //get balance of staker
   console.log(await staking.getStakeBalance(boredApeOwnerAddress))
+
+  console.log(await batToken.balanceOf(boredApeOwnerAddress));
   
   console.log(`Staking contract address:${staking.address}`)
 

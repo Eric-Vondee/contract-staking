@@ -28,14 +28,16 @@ contract Staking {
     }
 
     function approveStaker(address _address) public {
-        IERC20(batToken).approve(_address, 1000);
         IERC20(batToken).transfer(_address, 1000);
     }
   
     function stake(address _address, uint256 _amount) public{
         require(!stakers[_address].stakedStatus, "You have staked");
         require(IERC721(boredApeNft).balanceOf(_address) >=1, "Insufficient BAYC to stake");
-        require(IERC20(batToken).balanceOf(_address) >= _amount, "Insuffcients funds");
+        require(IERC20(batToken).balanceOf(_address) >= _amount, "Insuffcient funds");
+        require(IERC20(batToken).allowance(msg.sender, address(this)) >= _amount, "Insuffcient allowance");
+        (bool status) = IERC20(batToken).transferFrom(_address, msg.sender, _amount);
+        require(status, "transaction failed");
         Stakers storage i_ = stakers[_address];
         i_.staker = _address;
         i_.stakedStatus = true;
