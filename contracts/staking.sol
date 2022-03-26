@@ -6,8 +6,6 @@ import "./IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract Staking {
-    address BOREDAPES_NFT= 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
-    
     uint8 constant MONTHLY_PERCENTAGE = 10;
     uint8 constant DAYS = 30;
     address boredApeNft;
@@ -28,11 +26,16 @@ contract Staking {
         boredApeNft = _boredApeNft;
         batToken = _batToken;
     }
+
+    function approveStaker(address _address) public {
+        IERC20(batToken).approve(_address, 1000);
+        IERC20(batToken).transfer(_address, 1000);
+    }
   
     function stake(address _address, uint256 _amount) public{
         require(!stakers[_address].stakedStatus, "You have staked");
         require(IERC721(boredApeNft).balanceOf(_address) >=1, "Insufficient BAYC to stake");
-        require(IERC20(boredApeNft).transferFrom(_address, address(this), _amount), "Insufficient funds");
+        require(IERC20(batToken).balanceOf(_address) >= _amount, "Insuffcients funds");
         Stakers storage i_ = stakers[_address];
         i_.staker = _address;
         i_.stakedStatus = true;

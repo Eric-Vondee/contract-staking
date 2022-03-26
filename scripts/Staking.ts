@@ -42,36 +42,40 @@ import { ethers } from "hardhat";
 
 async function stakingContract() {
 
-  const BOREDAPES_NFT = "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d";
-  const boredApeOwnerAddress = "0x26bc0121ffef93e8c28d56a2eddabd590f7772b8";
+  const BOREDAPES_NFT = "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D";
+  const boredApeOwnerAddress = "0x4918fc71bd92f262c4d2f73804fa805de8602743";
+  const stakingContractAddress:string = "0x40a42Baf86Fc821f972Ad2aC878729063CeEF403";
+
   const boredApeSigner = await ethers.getSigner(boredApeOwnerAddress);
-  const stakingContractAddress:string = "0x4bf010f1b9beDA5450a8dD702ED602A104ff65EE";
 
-  const boredApeContract = await ethers.getContractAt("IERC721", BOREDAPES_NFT);
 
+  const boredApeContract = await ethers.getContractAt("IERC721", BOREDAPES_NFT, boredApeSigner);
   const staking = await ethers.getContractAt("Staking", stakingContractAddress);
+  const batToken = await ethers.getContractAt("BoredApeToken", '0x4bf010f1b9beDA5450a8dD702ED602A104ff65EE');
 
-  const batToken = await ethers.getContractAt("BoredApeToken", '0x40a42Baf86Fc821f972Ad2aC878729063CeEF403');
+  const stakingSigner = await ethers.getSigner(stakingContractAddress);
 
-  console.log(await batToken.balanceOf(stakingContractAddress));
-  let boredApeOwnerBalance = await (await boredApeContract.balanceOf(boredApeOwnerAddress)).toNumber();
+
+  console.log(`staking balance before approval: ${await batToken.balanceOf(stakingContractAddress)}`);
 
   /*******************************Bored Ape Owner ACCOUNT IMPERSONATION*******************************************/
-    if(boredApeOwnerBalance >= 1){
-    await batToken.transfer(boredApeOwnerAddress, 10)
-  }
 
-    //@ts-ignore
-    await hre.network.provider.request({
+  //@ts-ignore
+  await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [boredApeOwnerAddress]
   })
 
-  //stake bat tokens into the contract
-  await staking.connect(boredApeSigner).stake(boredApeOwnerAddress, 200)
 
-  //get balance 
-  console.log(await staking.getStakeBalance(boredApeOwnerAddress))
+  console.log(await staking.approveStaker(boredApeOwnerAddress))
+  console.log(await batToken.balanceOf(boredApeOwnerAddress))
+  console.log(`staking balance after approval: ${await batToken.balanceOf(stakingContractAddress)}`);
+
+  console.log(`stakin xx number of tokens: ${await staking.connect(boredApeSigner).stake(boredApeOwnerAddress, 100)}`)
+  //get staker profile
+  console.log(`Get staker profile: ${await staking.getStakeBalance(boredApeOwnerAddress)}`);
+
+  console.log(`staking balance after approval: ${await batToken.balanceOf(stakingContractAddress)}`);
 
   /**
    * Jump through time by increasing evm time
@@ -80,26 +84,15 @@ async function stakingContract() {
   await network.provider.send('evm_mine', [1653683245])
 
    //withdraw funds
-  console.log(await staking.withdrawStake(boredApeOwnerAddress, 100))
+  console.log(`Withdraw xx amount of funds: ${await staking.withdrawStake(boredApeOwnerAddress, 100)}`)
 
-  //   //restake 
-  // console.log(await staking.reStake(boredApeOwnerAddress, 100))
+  //restake 
+  // console.log(`Restake xx amount of funds: ${await staking.reStake(boredApeOwnerAddress, 100)}`)
 
   //get balance of staker
   console.log(await staking.getStakeBalance(boredApeOwnerAddress))
-
   
   console.log(`Staking contract address:${staking.address}`)
-
-
-  // //set  balance 
-  // await network.provider.send('hardhat_setBalance', [
-  //     boredApeOwnerAddress,
-  //     '0x10000000000000000000000000000000000000000000000000'
-  // ])
-
-  //provides allowance to the contract to transfer 
-  //await staking.connect(boredApeSigner).approve(deploySwap.address, "100000000000000000");
 
 }
 
